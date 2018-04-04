@@ -259,7 +259,6 @@ view model =
                                     , p [] [ code [] [ text currentQuery.result ] ]
                                     ]
                             ]
-        , Html.node "link" [ Html.Attributes.rel "stylesheet", Html.Attributes.href "https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" ] []
         ]
 
 
