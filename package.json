@@ -1,0 +1,22 @@
+{
+  "name": "elm-sqlalchemy-replace",
+  "version": "1.0.0",
+  "description": "Simple replace to change key to value in query text.",
+  "main": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bernardoow/Elm-SqlAlchemy-Replace.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Bernardoow/Elm-SqlAlchemy-Replace/issues"
+  },
+  "homepage": "https://github.com/Bernardoow/Elm-SqlAlchemy-Replace#readme",
+  "dependencies": {
+    "elm-test": "^0.18.12"
+  }
+}
