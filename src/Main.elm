@@ -101,8 +101,11 @@ update msg model =
 
                                 Just currentQuery ->
                                     let
+                                        result =
+                                            createQueryReplaced str currentQuery.params
+
                                         currentQueryUpdated =
-                                            { currentQuery | query = str }
+                                            { currentQuery | query = str, result = result }
                                     in
                                         Dict.insert position currentQueryUpdated querys
                                             |> Querys position
