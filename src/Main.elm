@@ -159,11 +159,30 @@ replace_single_quotation_marks_to_double_quotes text =
         text
 
 
+replace_none_to_none_with_double_quotes : String -> String
+replace_none_to_none_with_double_quotes text =
+    let
+        regex =
+            Regex.regex "None"
+    in
+        Regex.replace Regex.All regex (\item -> "\"None\"") text
+
+
+remove_double_quotes_from_none : String -> String
+remove_double_quotes_from_none text =
+    let
+        regex =
+            Regex.regex "'None'"
+    in
+        Regex.replace Regex.All regex (\item -> "None") text
+
+
 createQueryReplaced : String -> String -> String
 createQueryReplaced query params =
     let
         resultDecoder =
             replace_single_quotation_marks_to_double_quotes params
+                |> replace_none_to_none_with_double_quotes
                 |> Decoder.decodeString (Decoder.dict (Decoder.oneOf [ decoderIntData, decoderStringData, decoderFloatData ]))
     in
         case resultDecoder of
@@ -186,6 +205,7 @@ createQueryReplaced query params =
                         Regex.replace Regex.All (Regex.regex (":" ++ key)) (\match -> replaceData value) query
                 in
                     Dict.foldl replace query paramsDict
+                        |> remove_double_quotes_from_none
 
             Err str_error ->
                 str_error
