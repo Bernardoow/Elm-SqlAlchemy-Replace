@@ -180,13 +180,31 @@ remove_double_quotes_from_none text =
         Regex.replace Regex.All regex (\item -> "None") text
 
 
+remove_caracter_break_line : String -> String
+remove_caracter_break_line text =
+    let
+        regex_single_escape : Regex.Regex
+        regex_single_escape =
+            Regex.regex "\\n"
+
+        regex_double_escape : Regex.Regex
+        regex_double_escape =
+            Regex.regex "\\\\n"
+    in
+        Regex.replace Regex.All regex_single_escape (\item -> "") text
+            |> Regex.replace Regex.All regex_double_escape (\item -> "")
+
+
 createQueryReplaced : String -> String -> String
-createQueryReplaced query params =
+createQueryReplaced query_pre_processed params =
     let
         resultDecoder =
             replace_single_quotation_marks_to_double_quotes params
                 |> replace_none_to_none_with_double_quotes
                 |> Decoder.decodeString (Decoder.dict (Decoder.oneOf [ decoderIntData, decoderStringData, decoderFloatData ]))
+
+        query =
+            remove_caracter_break_line query_pre_processed
     in
         case resultDecoder of
             Ok paramsDict ->

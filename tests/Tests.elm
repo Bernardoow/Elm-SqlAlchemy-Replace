@@ -1,4 +1,4 @@
-module Example exposing (..)
+module Tests exposing (..)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
@@ -9,6 +9,7 @@ import Main
         , replace_single_quotation_marks_to_double_quotes
         , replace_none_to_none_with_double_quotes
         , remove_double_quotes_from_none
+        , remove_caracter_break_line
         )
 
 
@@ -25,8 +26,7 @@ suite =
                     in
                         Expect.equal result
                             ""
-
-            -- Expect.equal is designed to be used in pipeline style, like this.
+              -- Expect.equal is designed to be used in pipeline style, like this.
             , test "Int Param" <|
                 \_ ->
                     let
@@ -127,5 +127,62 @@ suite =
                             "bernardo None gomes"
                     in
                         Expect.equal result most_be
+            ]
+        , describe "remove break line (\n) from query"
+            [ (\_ ->
+                let
+                    result =
+                        remove_caracter_break_line "select * \nfrom table"
+
+                    most_be =
+                        "select * from table"
+                in
+                    Expect.equal result most_be
+              )
+                |> test "remove (\n) from query with (\n)"
+            , (\_ ->
+                let
+                    result =
+                        remove_caracter_break_line "select * from table"
+
+                    most_be =
+                        "select * from table"
+                in
+                    Expect.equal result most_be
+              )
+                |> test "remove (\n) from query without (\n)"
+            , (\_ ->
+                let
+                    result =
+                        remove_caracter_break_line ""
+
+                    most_be =
+                        ""
+                in
+                    Expect.equal result most_be
+              )
+                |> test "remove (\n) from blank query"
+            , (\_ ->
+                let
+                    result =
+                        remove_caracter_break_line "select * \\nfrom table"
+
+                    most_be =
+                        "select * from table"
+                in
+                    Expect.equal result most_be
+              )
+                |> test "remove (\\n) from query with (\\n)"
+            , (\_ ->
+                let
+                    result =
+                        remove_caracter_break_line "select * from table"
+
+                    most_be =
+                        "select * from table"
+                in
+                    Expect.equal result most_be
+              )
+                |> test "remove (\\n) from query without (\\n)"
             ]
         ]
