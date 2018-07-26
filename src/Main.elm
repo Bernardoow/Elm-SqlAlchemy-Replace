@@ -223,7 +223,7 @@ convert_datetime_to_tochar text =
                     in
                         case list_date of
                             ano :: mes :: dia :: horas :: minutos :: segundos :: [] ->
-                                "TO_DATE('" ++ ano ++ "/" ++ (fix mes) ++ "/" ++ (fix dia) ++ " " ++ (fix horas) ++ ":" ++ (fix minutos) ++ ":" ++ (fix segundos) ++ "', 'YYYY/MM/DD HH:MI:SS')"
+                                "TO_DATE('" ++ ano ++ "/" ++ (fix mes) ++ "/" ++ (fix dia) ++ " " ++ (fix horas) ++ ":" ++ (fix minutos) ++ ":" ++ (fix segundos) ++ "', 'YYYY/MM/DD HH24:MI:SS')"
 
                             _ ->
                                 Debug.crash ("Wrong date")
