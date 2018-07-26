@@ -195,12 +195,53 @@ remove_caracter_break_line text =
             |> Regex.replace Regex.All regex_double_escape (\item -> "")
 
 
+convert_datetime_to_tochar : String -> String
+convert_datetime_to_tochar text =
+    let
+        regex_datetime =
+            Regex.regex "datetime.datetime\\((\\d+), (\\d+), (\\d+), (\\d+), (\\d+), (\\d+), \\d+\\)"
+
+        convert_datetime_to_tochar_helper item =
+            let
+                transform_to_string : Maybe String -> String
+                transform_to_string item =
+                    case item of
+                        Just str ->
+                            str
+
+                        Nothing ->
+                            ""
+
+                transform_to_tochar list_date =
+                    let
+                        fix : String -> String
+                        fix value =
+                            if String.length value == 1 then
+                                "0" ++ value
+                            else
+                                value
+                    in
+                        case list_date of
+                            ano :: mes :: dia :: horas :: minutos :: segundos :: [] ->
+                                "TO_DATE('" ++ ano ++ "/" ++ (fix mes) ++ "/" ++ (fix dia) ++ " " ++ (fix horas) ++ ":" ++ (fix minutos) ++ ":" ++ (fix segundos) ++ "', 'YYYY/MM/DD HH:MI:SS')"
+
+                            _ ->
+                                Debug.crash ("Wrong date")
+            in
+                List.map transform_to_string item.submatches
+                    |> List.filter (\i -> String.isEmpty i |> not)
+                    |> transform_to_tochar
+    in
+        Regex.replace Regex.All regex_datetime convert_datetime_to_tochar_helper text
+
+
 createQueryReplaced : String -> String -> String
 createQueryReplaced query_pre_processed params =
     let
         resultDecoder =
             replace_single_quotation_marks_to_double_quotes params
                 |> replace_none_to_none_with_double_quotes
+                |> convert_datetime_to_tochar
                 |> Decoder.decodeString (Decoder.dict (Decoder.oneOf [ decoderIntData, decoderStringData, decoderFloatData ]))
 
         query =
@@ -213,7 +254,10 @@ createQueryReplaced query_pre_processed params =
                     replaceData data =
                         case data of
                             StringData str ->
-                                "'" ++ str ++ "'"
+                                if String.contains "TO_DATE" str then
+                                    str
+                                else
+                                    "'" ++ str ++ "'"
 
                             FloatData float ->
                                 toString float

@@ -10,6 +10,7 @@ import Main
         , replace_none_to_none_with_double_quotes
         , remove_double_quotes_from_none
         , remove_caracter_break_line
+        , convert_datetime_to_tochar
         )
 
 
@@ -184,5 +185,29 @@ suite =
                     Expect.equal result most_be
               )
                 |> test "remove (\\n) from query without (\\n)"
+            ]
+        , describe "Convert param Datetime to TO_DATE(oracle)"
+            [ (\_ ->
+                let
+                    result =
+                        convert_datetime_to_tochar "{'data_acao': datetime.datetime(2018, 07, 25, 17, 02, 34, 864111)}"
+
+                    most_be =
+                        "{'data_acao': TO_DATE('2018/07/25 17:02:34', 'YYYY/MM/DD HH:MI:SS')}"
+                in
+                    Expect.equal result most_be
+              )
+                |> test "create to_date from datetime.datetime"
+            , (\_ ->
+                let
+                    result =
+                        convert_datetime_to_tochar "{'data_acao': datetime.datetime(2018, 07, 25, 17, 02, 34, 864111), 'data_acao2': datetime.datetime(2017, 07, 25, 17, 02, 34, 864111)}"
+
+                    most_be =
+                        "{'data_acao': TO_DATE('2018/07/25 17:02:34', 'YYYY/MM/DD HH:MI:SS'), 'data_acao2': TO_DATE('2017/07/25 17:02:34', 'YYYY/MM/DD HH:MI:SS')}"
+                in
+                    Expect.equal result most_be
+              )
+                |> test "create to_date from datetime.datetime multiples params"
             ]
         ]
