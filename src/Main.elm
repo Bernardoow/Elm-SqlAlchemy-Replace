@@ -235,6 +235,46 @@ convert_datetime_to_tochar text =
         Regex.replace Regex.All regex_datetime convert_datetime_to_tochar_helper text
 
 
+convert_date_to_tochar : String -> String
+convert_date_to_tochar text =
+    let
+        regex_date =
+            Regex.regex "datetime.date\\((\\d+), (\\d+), (\\d+)\\)"
+
+        convert_datetime_to_tochar_helper item =
+            let
+                transform_to_string : Maybe String -> String
+                transform_to_string item =
+                    case item of
+                        Just str ->
+                            str
+
+                        Nothing ->
+                            ""
+
+                transform_to_tochar list_date =
+                    let
+                        fix : String -> String
+                        fix value =
+                            if String.length value == 1 then
+                                "0" ++ value
+                            else
+                                value
+                    in
+                        case list_date of
+                            ano :: mes :: dia :: [] ->
+                                "TO_DATE('" ++ ano ++ "/" ++ (fix mes) ++ "/" ++ (fix dia) ++ "', 'YYYY/MM/DD')"
+
+                            _ ->
+                                Debug.crash ("Wrong date")
+            in
+                List.map transform_to_string item.submatches
+                    |> List.filter (\i -> String.isEmpty i |> not)
+                    |> transform_to_tochar
+    in
+        Regex.replace Regex.All regex_date convert_datetime_to_tochar_helper text
+
+
 createQueryReplaced : String -> String -> String
 createQueryReplaced query_pre_processed params =
     let

@@ -11,6 +11,7 @@ import Main
         , remove_double_quotes_from_none
         , remove_caracter_break_line
         , convert_datetime_to_tochar
+        , convert_date_to_tochar
         )
 
 
@@ -209,5 +210,29 @@ suite =
                     Expect.equal result most_be
               )
                 |> test "create to_date from datetime.datetime multiples params"
+            ]
+        , describe "Convert param Date to TO_DATE(oracle)"
+            [ (\_ ->
+                let
+                    result =
+                        convert_date_to_tochar "{'data_acao': datetime.date(2018, 07, 25)}"
+
+                    most_be =
+                        "{'data_acao': TO_DATE('2018/07/25', 'YYYY/MM/DD')}"
+                in
+                    Expect.equal result most_be
+              )
+                |> test "create to_date from datetime.date"
+            , (\_ ->
+                let
+                    result =
+                        convert_date_to_tochar "{'data_acao': datetime.date(2018, 07, 25), 'data_acao2': datetime.date(2017, 07, 25)}"
+
+                    most_be =
+                        "{'data_acao': TO_DATE('2018/07/25', 'YYYY/MM/DD'), 'data_acao2': TO_DATE('2017/07/25', 'YYYY/MM/DD')}"
+                in
+                    Expect.equal result most_be
+              )
+                |> test "create to_date from datetime.date multiples params"
             ]
         ]
