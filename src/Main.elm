@@ -282,6 +282,7 @@ createQueryReplaced query_pre_processed params =
             replace_single_quotation_marks_to_double_quotes params
                 |> replace_none_to_none_with_double_quotes
                 |> convert_datetime_to_tochar
+                |> convert_date_to_tochar
                 |> Decoder.decodeString (Decoder.dict (Decoder.oneOf [ decoderIntData, decoderStringData, decoderFloatData ]))
 
         query =
@@ -305,11 +306,24 @@ createQueryReplaced query_pre_processed params =
                             IntData int ->
                                 toString int
 
-                    replace : String -> Data -> String -> String
-                    replace key value query =
+                    replace : ( String, Data ) -> String -> String
+                    replace ( key, value ) query =
                         Regex.replace Regex.All (Regex.regex (":" ++ key)) (\match -> replaceData value) query
+
+                    flippedComparison a b =
+                        case compare (Tuple.first a |> String.length) (Tuple.first b |> String.length) of
+                            LT ->
+                                GT
+
+                            EQ ->
+                                EQ
+
+                            GT ->
+                                LT
                 in
-                    Dict.foldl replace query paramsDict
+                    Dict.toList paramsDict
+                        |> List.sortWith flippedComparison
+                        |> List.foldl replace query
                         |> remove_double_quotes_from_none
 
             Err str_error ->
