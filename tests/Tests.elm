@@ -1,18 +1,18 @@
-module Tests exposing (..)
+module Tests exposing (suite)
 
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer, int, list, string)
-import Test exposing (..)
 import Main
     exposing
-        ( createQueryReplaced
-        , replace_single_quotation_marks_to_double_quotes
-        , replace_none_to_none_with_double_quotes
-        , remove_double_quotes_from_none
-        , remove_caracter_break_line
+        ( convert_date_to_tochar
         , convert_datetime_to_tochar
-        , convert_date_to_tochar
+        , createQueryReplaced
+        , remove_caracter_break_line
+        , remove_double_quotes_from_none
+        , replace_none_to_none_with_double_quotes
+        , replace_single_quotation_marks_to_double_quotes
         )
+import Test exposing (..)
 
 
 suite : Test
@@ -26,9 +26,10 @@ suite =
                             --createQueryReplaced "" ""
                             ""
                     in
-                        Expect.equal result
-                            ""
-              -- Expect.equal is designed to be used in pipeline style, like this.
+                    Expect.equal result
+                        ""
+
+            -- Expect.equal is designed to be used in pipeline style, like this.
             , test "Int Param" <|
                 \_ ->
                     let
@@ -44,7 +45,7 @@ suite =
                         most_be =
                             "select * from table where id=1;"
                     in
-                        Expect.equal result most_be
+                    Expect.equal result most_be
             , test "Float Param" <|
                 \_ ->
                     let
@@ -60,7 +61,7 @@ suite =
                         most_be =
                             "select * from table where id=1.5;"
                     in
-                        Expect.equal result most_be
+                    Expect.equal result most_be
             , test "String Param" <|
                 \_ ->
                     let
@@ -76,7 +77,7 @@ suite =
                         most_be =
                             "select * from table where id='sql';"
                     in
-                        Expect.equal result most_be
+                    Expect.equal result most_be
             , test "None Param" <|
                 \_ ->
                     let
@@ -92,7 +93,7 @@ suite =
                         most_be =
                             "select * from table where id=None;"
                     in
-                        Expect.equal result most_be
+                    Expect.equal result most_be
             ]
         , describe "replace single quotation marks to doublequotes"
             [ test "Replace Single Quotion" <|
@@ -104,7 +105,7 @@ suite =
                         most_be =
                             "bernard\"o"
                     in
-                        Expect.equal result most_be
+                    Expect.equal result most_be
             ]
         , describe "replace none to none with double quotes"
             [ test "Replace None to None with double quotes" <|
@@ -116,7 +117,7 @@ suite =
                         most_be =
                             "\"None\""
                     in
-                        Expect.equal result most_be
+                    Expect.equal result most_be
             ]
         , describe "remove double quotes from none"
             [ test "Remove quotes around nones" <|
@@ -128,7 +129,7 @@ suite =
                         most_be =
                             "bernardo None gomes"
                     in
-                        Expect.equal result most_be
+                    Expect.equal result most_be
             ]
         , describe "remove break line (\n) from query"
             [ (\_ ->
@@ -139,7 +140,7 @@ suite =
                     most_be =
                         "select * from table"
                 in
-                    Expect.equal result most_be
+                Expect.equal result most_be
               )
                 |> test "remove (\n) from query with (\n)"
             , (\_ ->
@@ -150,7 +151,7 @@ suite =
                     most_be =
                         "select * from table"
                 in
-                    Expect.equal result most_be
+                Expect.equal result most_be
               )
                 |> test "remove (\n) from query without (\n)"
             , (\_ ->
@@ -161,7 +162,7 @@ suite =
                     most_be =
                         ""
                 in
-                    Expect.equal result most_be
+                Expect.equal result most_be
               )
                 |> test "remove (\n) from blank query"
             , (\_ ->
@@ -172,7 +173,7 @@ suite =
                     most_be =
                         "select * from table"
                 in
-                    Expect.equal result most_be
+                Expect.equal result most_be
               )
                 |> test "remove (\\n) from query with (\\n)"
             , (\_ ->
@@ -183,7 +184,7 @@ suite =
                     most_be =
                         "select * from table"
                 in
-                    Expect.equal result most_be
+                Expect.equal result most_be
               )
                 |> test "remove (\\n) from query without (\\n)"
             ]
@@ -196,7 +197,7 @@ suite =
                     most_be =
                         "{'data_acao': TO_DATE('2018/07/25 17:02:34', 'YYYY/MM/DD HH:MI:SS')}"
                 in
-                    Expect.equal result most_be
+                Expect.equal result most_be
               )
                 |> test "create to_date from datetime.datetime"
             , (\_ ->
@@ -207,7 +208,7 @@ suite =
                     most_be =
                         "{'data_acao': TO_DATE('2018/07/25 17:02:34', 'YYYY/MM/DD HH:MI:SS'), 'data_acao2': TO_DATE('2017/07/25 17:02:34', 'YYYY/MM/DD HH:MI:SS')}"
                 in
-                    Expect.equal result most_be
+                Expect.equal result most_be
               )
                 |> test "create to_date from datetime.datetime multiples params"
             ]
@@ -220,7 +221,7 @@ suite =
                     most_be =
                         "{'data_acao': TO_DATE('2018/07/25', 'YYYY/MM/DD')}"
                 in
-                    Expect.equal result most_be
+                Expect.equal result most_be
               )
                 |> test "create to_date from datetime.date"
             , (\_ ->
@@ -231,8 +232,26 @@ suite =
                     most_be =
                         "{'data_acao': TO_DATE('2018/07/25', 'YYYY/MM/DD'), 'data_acao2': TO_DATE('2017/07/25', 'YYYY/MM/DD')}"
                 in
-                    Expect.equal result most_be
+                Expect.equal result most_be
               )
                 |> test "create to_date from datetime.date multiples params"
+            ]
+        , describe "replace with similar keys"
+            [ test "replace with similar keys" <|
+                \_ ->
+                    let
+                        params =
+                            "{'param1': 1.5}"
+
+                        query =
+                            "select * from table where id=:param11;"
+
+                        result =
+                            createQueryReplaced query params
+
+                        most_be =
+                            "select * from table where id=:param11;"
+                    in
+                    Expect.equal result most_be
             ]
         ]

@@ -1,11 +1,13 @@
-module Main exposing (..)
+module Main exposing (Data(..), Model, Msg(..), Querys(..), ViewModel, convert_date_to_tochar, convert_datetime_to_tochar, createQueryReplaced, decoderFloatData, decoderIntData, decoderStringData, init, main, remove_caracter_break_line, remove_double_quotes_from_none, replace_none_to_none_with_double_quotes, replace_single_quotation_marks_to_double_quotes, update, view, viewPagination)
 
-import Html exposing (Html, text, div, h1, textarea, p, button, label, code, ul, li, a, span, nav)
-import Html.Attributes exposing (class, rows, attribute, href, value, style)
-import Html.Events exposing (onInput, onClick)
-import Json.Decode as Decoder
+import Browser
 import Dict exposing (Dict)
+import Html exposing (Html, a, button, code, div, h1, label, li, nav, p, span, text, textarea, ul)
+import Html.Attributes exposing (attribute, class, href, rows, style, value)
+import Html.Events exposing (onClick, onInput)
+import Json.Decode as Decoder
 import Regex
+
 
 
 ---- MODEL ----
@@ -36,21 +38,21 @@ type Data
 
 decoderIntData : Decoder.Decoder Data
 decoderIntData =
-    Decoder.map IntData (Decoder.int)
+    Decoder.map IntData Decoder.int
 
 
 decoderStringData : Decoder.Decoder Data
 decoderStringData =
-    Decoder.map StringData (Decoder.string)
+    Decoder.map StringData Decoder.string
 
 
 decoderFloatData : Decoder.Decoder Data
 decoderFloatData =
-    Decoder.map FloatData (Decoder.float)
+    Decoder.map FloatData Decoder.float
 
 
-init : ( Model, Cmd Msg )
-init =
+init : () -> ( Model, Cmd Msg )
+init _ =
     ( Model Empty, Cmd.none )
 
 
@@ -70,7 +72,7 @@ update msg model =
     case msg of
         OnClickNewQuery ->
             let
-                querys =
+                querys_result =
                     case model.querys of
                         Empty ->
                             ViewModel "" "" ""
@@ -82,14 +84,16 @@ update msg model =
                                 vm =
                                     ViewModel "" "" ""
                             in
-                                Dict.insert (Dict.size querys) vm querys
-                                    |> Querys (Dict.size querys)
+                            Dict.insert (Dict.size querys) vm querys
+                                |> Querys (Dict.size querys)
             in
-                { model | querys = querys } ! []
+            ( { model | querys = querys_result }
+            , Cmd.none
+            )
 
         InputQuery str ->
             let
-                querys =
+                querys_result =
                     case model.querys of
                         Empty ->
                             Empty
@@ -107,14 +111,16 @@ update msg model =
                                         currentQueryUpdated =
                                             { currentQuery | query = str, result = result }
                                     in
-                                        Dict.insert position currentQueryUpdated querys
-                                            |> Querys position
+                                    Dict.insert position currentQueryUpdated querys
+                                        |> Querys position
             in
-                { model | querys = querys } ! []
+            ( { model | querys = querys_result }
+            , Cmd.none
+            )
 
         InputParams str ->
             let
-                querys =
+                querys_result =
                     case model.querys of
                         Empty ->
                             Empty
@@ -132,14 +138,16 @@ update msg model =
                                         currentQueryUpdated =
                                             { currentQuery | params = str, result = result }
                                     in
-                                        Dict.insert position currentQueryUpdated querys
-                                            |> Querys position
+                                    Dict.insert position currentQueryUpdated querys
+                                        |> Querys position
             in
-                { model | querys = querys } ! []
+            ( { model | querys = querys_result }
+            , Cmd.none
+            )
 
         ChangeQuery new_position ->
             let
-                querys =
+                querys_result =
                     case model.querys of
                         Empty ->
                             Empty
@@ -147,7 +155,9 @@ update msg model =
                         Querys position querys ->
                             Querys new_position querys
             in
-                { model | querys = querys } ! []
+            ( { model | querys = querys_result }
+            , Cmd.none
+            )
 
 
 replace_single_quotation_marks_to_double_quotes : String -> String
@@ -156,6 +166,7 @@ replace_single_quotation_marks_to_double_quotes text =
         (\c ->
             if c == '\'' then
                 '"'
+
             else
                 c
         )
@@ -164,115 +175,133 @@ replace_single_quotation_marks_to_double_quotes text =
 
 replace_none_to_none_with_double_quotes : String -> String
 replace_none_to_none_with_double_quotes text =
-    let
-        regex =
-            Regex.regex "None"
-    in
-        Regex.replace Regex.All regex (\item -> "\"None\"") text
+    case Regex.fromStringWith { caseInsensitive = False, multiline = False } "None" of
+        Nothing ->
+            text
+
+        Just regex ->
+            Regex.replace regex (\item -> "\"None\"") text
 
 
 remove_double_quotes_from_none : String -> String
 remove_double_quotes_from_none text =
-    let
-        regex =
-            Regex.regex "'None'"
-    in
-        Regex.replace Regex.All regex (\item -> "None") text
+    case Regex.fromStringWith { caseInsensitive = False, multiline = False } "'None'" of
+        Nothing ->
+            text
+
+        Just regex ->
+            Regex.replace regex (\item -> "None") text
 
 
 remove_caracter_break_line : String -> String
 remove_caracter_break_line text =
     let
-        regex_single_escape : Regex.Regex
-        regex_single_escape =
-            Regex.regex "\\n"
+        regex_single_escape : String -> String
+        regex_single_escape text_to_regex =
+            case Regex.fromStringWith { caseInsensitive = False, multiline = False } "\\n" of
+                Nothing ->
+                    text
 
-        regex_double_escape : Regex.Regex
-        regex_double_escape =
-            Regex.regex "\\\\n"
+                Just regex ->
+                    Regex.replace regex (\item -> "") text_to_regex
+
+        regex_double_escape : String -> String
+        regex_double_escape text_to_regex =
+            case Regex.fromStringWith { caseInsensitive = False, multiline = False } "\\\\n" of
+                Nothing ->
+                    text
+
+                Just regex ->
+                    Regex.replace regex (\item -> "") text_to_regex
     in
-        Regex.replace Regex.All regex_single_escape (\item -> "") text
-            |> Regex.replace Regex.All regex_double_escape (\item -> "")
+    regex_single_escape text
+        |> regex_double_escape
 
 
 convert_datetime_to_tochar : String -> String
 convert_datetime_to_tochar text =
-    let
-        regex_datetime =
-            Regex.regex "datetime.datetime\\((\\d+), (\\d+), (\\d+), (\\d+), (\\d+), (\\d+), \\d+\\)"
+    case Regex.fromStringWith { caseInsensitive = False, multiline = False } "datetime.datetime\\((\\d+), (\\d+), (\\d+), (\\d+), (\\d+), (\\d+), \\d+\\)" of
+        Nothing ->
+            text
 
-        convert_datetime_to_tochar_helper item =
+        Just regex_datetime ->
             let
-                transform_to_string : Maybe String -> String
-                transform_to_string item =
-                    case item of
-                        Just str ->
-                            str
-
-                        Nothing ->
-                            ""
-
-                transform_to_tochar list_date =
+                convert_datetime_to_tochar_helper item =
                     let
-                        fix : String -> String
-                        fix value =
-                            if String.length value == 1 then
-                                "0" ++ value
-                            else
-                                value
-                    in
-                        case list_date of
-                            ano :: mes :: dia :: horas :: minutos :: segundos :: [] ->
-                                "TO_DATE('" ++ ano ++ "/" ++ (fix mes) ++ "/" ++ (fix dia) ++ " " ++ (fix horas) ++ ":" ++ (fix minutos) ++ ":" ++ (fix segundos) ++ "', 'YYYY/MM/DD HH24:MI:SS')"
+                        transform_to_string : Maybe String -> String
+                        transform_to_string tts_item =
+                            case tts_item of
+                                Just str ->
+                                    str
 
-                            _ ->
-                                Debug.crash ("Wrong date")
+                                Nothing ->
+                                    ""
+
+                        transform_to_tochar list_date =
+                            let
+                                fix : String -> String
+                                fix value =
+                                    if String.length value == 1 then
+                                        "0" ++ value
+
+                                    else
+                                        value
+                            in
+                            case list_date of
+                                ano :: mes :: dia :: horas :: minutos :: segundos :: [] ->
+                                    "TO_DATE('" ++ ano ++ "/" ++ fix mes ++ "/" ++ fix dia ++ " " ++ fix horas ++ ":" ++ fix minutos ++ ":" ++ fix segundos ++ "', 'YYYY/MM/DD HH24:MI:SS')"
+
+                                _ ->
+                                    "Ocorreu algum error"
+                    in
+                    List.map transform_to_string item.submatches
+                        |> List.filter (\i -> String.isEmpty i |> not)
+                        |> transform_to_tochar
             in
-                List.map transform_to_string item.submatches
-                    |> List.filter (\i -> String.isEmpty i |> not)
-                    |> transform_to_tochar
-    in
-        Regex.replace Regex.All regex_datetime convert_datetime_to_tochar_helper text
+            Regex.replace regex_datetime convert_datetime_to_tochar_helper text
 
 
 convert_date_to_tochar : String -> String
 convert_date_to_tochar text =
-    let
-        regex_date =
-            Regex.regex "datetime.date\\((\\d+), (\\d+), (\\d+)\\)"
+    case Regex.fromStringWith { caseInsensitive = False, multiline = False } "datetime.date\\((\\d+), (\\d+), (\\d+)\\)" of
+        Nothing ->
+            text
 
-        convert_datetime_to_tochar_helper item =
+        Just regex_date ->
             let
-                transform_to_string : Maybe String -> String
-                transform_to_string item =
-                    case item of
-                        Just str ->
-                            str
-
-                        Nothing ->
-                            ""
-
-                transform_to_tochar list_date =
+                convert_datetime_to_tochar_helper item =
                     let
-                        fix : String -> String
-                        fix value =
-                            if String.length value == 1 then
-                                "0" ++ value
-                            else
-                                value
-                    in
-                        case list_date of
-                            ano :: mes :: dia :: [] ->
-                                "TO_DATE('" ++ ano ++ "/" ++ (fix mes) ++ "/" ++ (fix dia) ++ "', 'YYYY/MM/DD')"
+                        transform_to_string : Maybe String -> String
+                        transform_to_string tts_item =
+                            case tts_item of
+                                Just str ->
+                                    str
 
-                            _ ->
-                                Debug.crash ("Wrong date")
+                                Nothing ->
+                                    ""
+
+                        transform_to_tochar list_date =
+                            let
+                                fix : String -> String
+                                fix value =
+                                    if String.length value == 1 then
+                                        "0" ++ value
+
+                                    else
+                                        value
+                            in
+                            case list_date of
+                                ano :: mes :: dia :: [] ->
+                                    "TO_DATE('" ++ ano ++ "/" ++ fix mes ++ "/" ++ fix dia ++ "', 'YYYY/MM/DD')"
+
+                                _ ->
+                                    "Ocorreu algum error"
+                    in
+                    List.map transform_to_string item.submatches
+                        |> List.filter (\i -> String.isEmpty i |> not)
+                        |> transform_to_tochar
             in
-                List.map transform_to_string item.submatches
-                    |> List.filter (\i -> String.isEmpty i |> not)
-                    |> transform_to_tochar
-    in
-        Regex.replace Regex.All regex_date convert_datetime_to_tochar_helper text
+            Regex.replace regex_date convert_datetime_to_tochar_helper text
 
 
 createQueryReplaced : String -> String -> String
@@ -287,33 +316,39 @@ createQueryReplaced query_pre_processed params =
         query =
             remove_caracter_break_line query_pre_processed
     in
-        case resultDecoder of
-            Ok paramsDict ->
-                let
-                    replaceData : Data -> String
-                    replaceData data =
-                        case data of
-                            StringData str ->
-                                if String.contains "TO_DATE" str then
-                                    str
-                                else
-                                    "'" ++ str ++ "'"
+    case resultDecoder of
+        Ok paramsDict ->
+            let
+                replaceData : Data -> String
+                replaceData data =
+                    case data of
+                        StringData str ->
+                            if String.contains "TO_DATE" str then
+                                str
 
-                            FloatData float ->
-                                toString float
+                            else
+                                "'" ++ str ++ "'"
 
-                            IntData int ->
-                                toString int
+                        FloatData float ->
+                            String.fromFloat float
 
-                    replace : String -> Data -> String -> String
-                    replace key value query =
-                        Regex.replace Regex.All (Regex.regex (":" ++ key)) (\match -> replaceData value) query
-                in
-                    Dict.foldl replace query paramsDict
-                        |> remove_double_quotes_from_none
+                        IntData int ->
+                            String.fromInt int
 
-            Err str_error ->
-                str_error
+                replace : String -> Data -> String -> String
+                replace key value query_replace =
+                    case Regex.fromStringWith { caseInsensitive = False, multiline = False } (":" ++ key) of
+                        Nothing ->
+                            query_replace
+
+                        Just regex ->
+                            Regex.replace regex (\match -> replaceData value) query_replace
+            in
+            Dict.foldl replace query paramsDict
+                |> remove_double_quotes_from_none
+
+        Err str_error ->
+            Decoder.errorToString str_error
 
 
 
@@ -324,17 +359,18 @@ viewPagination : Int -> Int -> Html Msg
 viewPagination query_count current_position =
     let
         create_li : Int -> Int -> Html Msg
-        create_li current_position number =
+        create_li current_position_ number =
             li
-                [ if current_position == number then
+                [ if current_position_ == number then
                     class "active"
+
                   else
                     class ""
                 , ChangeQuery number |> onClick
                 ]
                 [ a
                     []
-                    [ toString (number + 1) |> text ]
+                    [ String.fromInt (number + 1) |> text ]
                 ]
 
         lis =
@@ -342,14 +378,14 @@ viewPagination query_count current_position =
                 |> List.map (create_li current_position)
 
         lis_with_new_query =
-            List.append lis [ li [ onClick OnClickNewQuery ] [ a [ style [ ( "margin-left", "10px" ) ] ] [ text "New Query ++" ] ] ]
+            List.append lis [ li [ onClick OnClickNewQuery ] [ a [ style "margin-left" "10px" ] [ text "New Query ++" ] ] ]
     in
-        div [ class "col-xs-12 col-sm-12 col-md-12 col-lg-12" ]
-            [ nav [ attribute "aria-label" "Page navigation" ]
-                [ ul [ class "pagination" ]
-                    lis_with_new_query
-                ]
+    div [ class "col-xs-12 col-sm-12 col-md-12 col-lg-12" ]
+        [ nav [ attribute "aria-label" "Page navigation" ]
+            [ ul [ class "pagination" ]
+                lis_with_new_query
             ]
+        ]
 
 
 view : Model -> Html Msg
@@ -369,7 +405,7 @@ view model =
                         div [ class "row" ]
                             [ viewPagination (Dict.size querys) position
                             , div [ class "col-xs-12 col-sm-12 col-md-12 col-lg-12 form-group" ]
-                                [ label [] [ "Query " ++ (toString (position + 1)) |> text ]
+                                [ label [] [ "Query " ++ String.fromInt (position + 1) |> text ]
                                 , textarea [ rows 5, class "form-control", onInput InputQuery, value currentQuery.query ] []
                                 ]
                             , div [ class "col-xs-12 col-sm-12 col-md-12 col-lg-12 form-group" ]
@@ -378,6 +414,7 @@ view model =
                                 ]
                             , if String.isEmpty currentQuery.query || String.isEmpty currentQuery.params then
                                 div [] []
+
                               else
                                 div [ class "col-xs-12 col-sm-12 col-md-12 col-lg-12 form-group" ]
                                     [ label [] [ text "Result" ]
@@ -391,9 +428,9 @@ view model =
 ---- PROGRAM ----
 
 
-main : Program Never Model Msg
+main : Program () Model Msg
 main =
-    Html.program
+    Browser.element
         { view = view
         , init = init
         , update = update
